@@ -22,4 +22,15 @@ android {
              path 'src/main/jni/Android.mk'
         }
     }
+
+    packagingOptions {
+        exclude '**/libandroid_runtime.so'
+        exclude '**/libbinder.so'
+        exclude '**/libgui.so'
+        exclude '**/libutils.so'
+        exclude '**/libcamera_client.so'
+        exclude '**/libstagefright_foundation.so'
+        exclude '**/libcutils.so'
+        exclude '**/libcamera_metadata.so'
+    }
 }
