@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 The Android Open Source Project
+ * Copyright 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,39 +14,31 @@
  * limitations under the License.
  */
 
-//
-#ifndef ANDROID_IPERMISSION_CONTROLLER_H
-#define ANDROID_IPERMISSION_CONTROLLER_H
+#ifndef ANDROID_I_PROCESS_INFO_SERVICE_H
+#define ANDROID_I_PROCESS_INFO_SERVICE_H
 
 #include <binder/IInterface.h>
-#include <stdlib.h>
 
 namespace android {
 
 // ----------------------------------------------------------------------
 
-class IPermissionController : public IInterface
-{
+class IProcessInfoService : public IInterface {
 public:
-    DECLARE_META_INTERFACE(PermissionController);
+    DECLARE_META_INTERFACE(ProcessInfoService);
 
-    virtual bool checkPermission(const String16& permission, int32_t pid, int32_t uid) = 0;
-
-    virtual void getPackagesForUid(const uid_t uid, Vector<String16> &packages) = 0;
-
-    virtual bool isRuntimePermission(const String16& permission) = 0;
+    virtual status_t    getProcessStatesFromPids( size_t length,
+                                                  /*in*/ int32_t* pids,
+                                                  /*out*/ int32_t* states) = 0;
 
     enum {
-        CHECK_PERMISSION_TRANSACTION = IBinder::FIRST_CALL_TRANSACTION,
-        GET_PACKAGES_FOR_UID_TRANSACTION = IBinder::FIRST_CALL_TRANSACTION + 1,
-        IS_RUNTIME_PERMISSION_TRANSACTION = IBinder::FIRST_CALL_TRANSACTION + 2
+        GET_PROCESS_STATES_FROM_PIDS = IBinder::FIRST_CALL_TRANSACTION,
     };
 };
 
 // ----------------------------------------------------------------------
 
-class BnPermissionController : public BnInterface<IPermissionController>
-{
+class BnProcessInfoService : public BnInterface<IProcessInfoService> {
 public:
     virtual status_t    onTransact( uint32_t code,
                                     const Parcel& data,
@@ -58,5 +50,4 @@ public:
 
 }; // namespace android
 
-#endif // ANDROID_IPERMISSION_CONTROLLER_H
-
+#endif // ANDROID_I_PROCESS_INFO_SERVICE_H
