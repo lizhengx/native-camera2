@@ -213,7 +213,8 @@ ACameraMetadata::getTags(/*out*/int32_t* numTags,
     if (mTags.size() == 0) {
         size_t entry_count = mData.entryCount();
         mTags.setCapacity(entry_count);
-        const camera_metadata_t* rawMetadata = mData.getAndLock();
+        CameraMetadata* pData = const_cast<CameraMetadata*>(&mData); // instead of tweaking the system header
+        const camera_metadata_t* rawMetadata = pData->getAndLock(); // in 24, getAndLock() is defined as const
         for (size_t i = 0; i < entry_count; i++) {
             camera_metadata_ro_entry_t entry;
             int ret = get_camera_metadata_ro_entry(rawMetadata, i, &entry);
@@ -226,7 +227,7 @@ ACameraMetadata::getTags(/*out*/int32_t* numTags,
                 mTags.push_back(entry.tag);
             }
         }
-        mData.unlock(rawMetadata);
+        pData->unlock(rawMetadata); // in 24, unlock() is defined as const
     }
 
     *numTags = mTags.size();

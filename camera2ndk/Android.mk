@@ -34,14 +34,26 @@ LOCAL_SRC_FILES:=                  \
 LOCAL_MODULE:= libcamera2ndk
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+
+LOCAL_SRC_FILES  += override/stubs.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/override
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/override/camera
+
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/system/core-include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/system/av-include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/system/native-include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/system/libhardware-include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/system/media-include/camera
+
+LOCAL_CFLAGS += -DHAVE_PTHREADS -include stdint.h
+
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 
 LOCAL_CFLAGS += -fvisibility=hidden -D EXPORT='__attribute__ ((visibility ("default")))'
-LOCAL_CFLAGS += -Wall -Wextra -Werror
+# LOCAL_CFLAGS += -Wall -Wextra -Werror
 
 LOCAL_SHARED_LIBRARIES := \
     libbinder \
-    liblog \
     libgui \
     libutils \
     libandroid_runtime \
@@ -49,9 +61,49 @@ LOCAL_SHARED_LIBRARIES := \
     libstagefright_foundation \
     libcutils \
     libcamera_metadata \
-    libmediandk
 
-LOCAL_SRC_FILES := $(NDK_ROOT)/platforms/android-24/arch-arm/usr/lib/libcamera2ndk.so
-include $(PREBUILT_SHARED_LIBRARY)
+LOCAL_LDLIBS := -lmediandk -llog -latomic
+include $(BUILD_SHARED_LIBRARY)
 
 endif
+
+LOCAL_PATH := $(LOCAL_PATH)/system/libs/armeabi-v7a
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libbinder
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libgui
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libutils
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libandroid_runtime
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libcamera_client
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libstagefright_foundation
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libcutils
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE:= libcamera_metadata
+LOCAL_SRC_FILES:= $(LOCAL_MODULE).so
+include $(PREBUILT_SHARED_LIBRARY)

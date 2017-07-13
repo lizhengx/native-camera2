@@ -72,11 +72,11 @@ class CameraManagerGlobal final : public RefBase {
     class CameraServiceListener final : public hardware::BnCameraServiceListener {
       public:
         explicit CameraServiceListener(CameraManagerGlobal* cm) : mCameraManager(cm) {}
-        virtual binder::Status onStatusChanged(int32_t status, int32_t cameraId);
+        virtual void onStatusChanged(Status status, int32_t cameraId);
 
         // Torch API not implemented yet
         virtual binder::Status onTorchStatusChanged(int32_t, const String16&) {
-            return binder::Status::ok();
+            return OK;
         }
 
       private:
