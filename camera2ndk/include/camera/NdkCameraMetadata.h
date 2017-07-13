@@ -43,7 +43,7 @@
 
 __BEGIN_DECLS
 
-#if __ANDROID_API__ >= 24
+#if __ANDROID_API__ >= 21
 
 /**
  * ACameraMetadata is opaque type that provides access to read-only camera metadata like camera

@@ -43,7 +43,7 @@
 
 __BEGIN_DECLS
 
-#if __ANDROID_API__ >= 24
+#if __ANDROID_API__ >= 21
 
 /**
  * ACameraCaptureSession is an opaque type that manages frame captures of a camera device.

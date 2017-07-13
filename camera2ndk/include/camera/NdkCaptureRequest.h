@@ -44,7 +44,7 @@
 
 __BEGIN_DECLS
 
-#if __ANDROID_API__ >= 24
+#if __ANDROID_API__ >= 21
 
 // Container for output targets
 typedef struct ACameraOutputTargets ACameraOutputTargets;
