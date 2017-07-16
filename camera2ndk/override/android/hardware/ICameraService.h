@@ -7,6 +7,7 @@
 
 #include <utils/String16.h>
 #include <camera/ICameraService.h>
+
 namespace android {
     namespace hardware {
         using android::ICameraService;

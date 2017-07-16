@@ -75,8 +75,7 @@ class CameraManagerGlobal final : public RefBase {
         virtual void onStatusChanged(Status status, int32_t cameraId);
 
         // Torch API not implemented yet
-        virtual binder::Status onTorchStatusChanged(int32_t, const String16&) {
-            return OK;
+        virtual void onTorchStatusChanged(TorchStatus, const String16&) {
         }
 
       private:

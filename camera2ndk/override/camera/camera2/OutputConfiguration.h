@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ANDROID_HARDWARE_CAMERA2_OUTPUTCONFIGURATION_H
-#define ANDROID_HARDWARE_CAMERA2_OUTPUTCONFIGURATION_H
+#ifndef ANDROID_HARDWARE_CAMERA2_OUTPUTCONFIGURATION_H_OV
+#define ANDROID_HARDWARE_CAMERA2_OUTPUTCONFIGURATION_H_OV
 
 #include <gui/IGraphicBufferProducer.h>
 #include <binder/Parcelable.h>
@@ -111,9 +111,8 @@ private:
 } // namespace camera2
 } // namespace hardware
 
-
-using hardware::camera2::params::OutputConfiguration;
-
 }; // namespace android
+
+#include_next <camera/camera2/OutputConfiguration.h>
 
 #endif

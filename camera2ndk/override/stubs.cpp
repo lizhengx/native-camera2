@@ -12,18 +12,6 @@
 
 namespace android {
 
-    VendorTagDescriptor::VendorTagDescriptor() {}
-
-    sp<ICameraService> ICameraService::asInterface(sp<IBinder> const & t) { return nullptr; }
-
-    status_t BnCameraServiceListener::onTransact(unsigned int, Parcel const &, Parcel *,
-                                        unsigned int) { return OK; }
-    status_t BnCameraDeviceCallbacks::onTransact(unsigned int, android::Parcel const &, android::Parcel *,
-                                        unsigned int) { return OK; }
-
-    const camera_metadata_t* CameraMetadata::getAndLock() { return nullptr; }
-    status_t CameraMetadata::unlock(camera_metadata const *) { return OK; }
-
     namespace hardware {
         namespace camera2 {
             status_t CaptureRequest::readFromParcel(const Parcel* parcel) { return OK; }
@@ -41,8 +29,20 @@ namespace android {
                         mGbp(gbp), mRotation(rotation), mSurfaceSetID(surfaceSetID) {};
                 int OutputConfiguration::getWidth() const { return mWidth; }
                 int OutputConfiguration::getHeight() const { return mHeight; }
-                status_t OutputConfiguration::writeToParcel(Parcel *parcel) const { return OK; }
-                status_t OutputConfiguration::readFromParcel(const Parcel* parcel) { return OK; }
+                sp<IGraphicBufferProducer> hardware::camera2::params::OutputConfiguration::getGraphicBufferProducer() const {
+                    return mGbp;
+                }
+                int android::hardware::camera2::params::OutputConfiguration::getRotation() const {
+                    return mRotation;
+                }
+                status_t OutputConfiguration::writeToParcel(Parcel *parcel) const {
+                    // TODO: must implement
+                    return OK;
+                }
+                status_t OutputConfiguration::readFromParcel(const Parcel* parcel) {
+                    // TODO: must implement
+                    return OK;
+                }
             }
         }
     }

@@ -46,6 +46,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/system/libhardware-include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/system/media-include/camera
 
 LOCAL_CFLAGS += -DHAVE_PTHREADS -include stdint.h
+LOCAL_CPPFLAGS += -include memory
 
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 

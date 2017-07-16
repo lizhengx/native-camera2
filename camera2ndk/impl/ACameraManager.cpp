@@ -61,7 +61,7 @@ CameraManagerGlobal::~CameraManagerGlobal() {
     sInstance = nullptr;
     Mutex::Autolock _l(mLock);
     if (mCameraService != nullptr) {
-        mCameraService->asBinder()->unlinkToDeath(mDeathNotifier);
+        IInterface::asBinder(mCameraService)->unlinkToDeath(mDeathNotifier);
         mCameraService->removeListener(mCameraServiceListener);
     }
     mDeathNotifier.clear();
@@ -176,7 +176,7 @@ void CameraManagerGlobal::registerAvailabilityCallback(
             int32_t cameraId = pair.first;
             int32_t status = pair.second;
 
-            sp<AMessage> msg = new AMessage(kWhatSendSingleCallback, mHandler->id());
+            sp<AMessage> msg = new AMessage(kWhatSendSingleCallback, mHandler);
             ACameraManager_AvailabilityCallback cb = isStatusAvailable(status) ?
                     callback->onCameraAvailable : callback->onCameraUnavailable;
             msg->setPointer(kCallbackFpKey, (void *) cb);
@@ -195,7 +195,7 @@ void CameraManagerGlobal::unregisterAvailabilityCallback(
 }
 
 bool CameraManagerGlobal::validStatus(int32_t status) {
-    switch (status) {
+    switch ((uint32_t)status) {
         case hardware::ICameraServiceListener::STATUS_NOT_PRESENT:
         case hardware::ICameraServiceListener::STATUS_PRESENT:
         case hardware::ICameraServiceListener::STATUS_ENUMERATING:
@@ -292,7 +292,7 @@ void CameraManagerGlobal::onStatusChangedLocked(
         // Iterate through all registered callbacks
         mDeviceStatusMap[cameraId] = status;
         for (auto cb : mCallbacks) {
-            sp<AMessage> msg = new AMessage(kWhatSendSingleCallback, mHandler->id());
+            sp<AMessage> msg = new AMessage(kWhatSendSingleCallback, mHandler);
             ACameraManager_AvailabilityCallback cbFp = isStatusAvailable(status) ?
                     cb.mAvailable : cb.mUnavailable;
             msg->setPointer(kCallbackFpKey, (void *) cbFp);

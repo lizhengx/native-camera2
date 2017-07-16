@@ -22,6 +22,7 @@
 #include <android/hardware/ICameraService.h>
 #include <camera2/SubmitInfo.h>
 #include <gui/Surface.h>
+#include <camera/camera2/OutputConfiguration.h>
 #include "ACameraDevice.h"
 #include "ACameraMetadata.h"
 #include "ACaptureRequest.h"
@@ -209,7 +210,6 @@ CameraDevice::submitRequestsLocked(
     // Form two vectors of capture request, one for internal tracking
     List<sp<CaptureRequest> > requestList;
     Vector<sp<CaptureRequest> > requestsV;
-
     requestsV.setCapacity(numRequests);
     for (int i = 0; i < numRequests; i++) {
         sp<CaptureRequest> req;
@@ -259,7 +259,7 @@ CameraDevice::submitRequestsLocked(
     }
 
     if (mIdle) {
-        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler);
         msg->setPointer(kContextKey, session->mUserSessionCallback.context);
         msg->setObject(kSessionSpKey, session);
         msg->setPointer(kCallbackFpKey, (void*) session->mUserSessionCallback.onActive);
@@ -411,7 +411,7 @@ CameraDevice::flushLocked(ACameraCaptureSession* session) {
 
     mFlushing = true;
     // Send onActive callback to guarantee there is always active->ready transition
-    sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler->id());
+    sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler);
     msg->setPointer(kContextKey, session->mUserSessionCallback.context);
     msg->setObject(kSessionSpKey, session);
     msg->setPointer(kCallbackFpKey, (void*) session->mUserSessionCallback.onActive);
@@ -419,7 +419,7 @@ CameraDevice::flushLocked(ACameraCaptureSession* session) {
 
     // If device is already idling, send callback and exit early
     if (mIdle) {
-        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler);
         msg->setPointer(kContextKey, session->mUserSessionCallback.context);
         msg->setObject(kSessionSpKey, session);
         msg->setPointer(kCallbackFpKey, (void*) session->mUserSessionCallback.onReady);
@@ -512,7 +512,7 @@ CameraDevice::configureStreamsLocked(const ACaptureSessionOutputContainer* outpu
         return ret;
     }
 
-    std::set<std::pair<ANativeWindow*, OutputConfiguration>> outputSet;
+    std::set<std::pair<ANativeWindow*, hardware::camera2::params::OutputConfiguration>> outputSet;
     for (auto outConfig : outputs->mOutputs) {
         ANativeWindow* anw = outConfig.mWindow;
         sp<IGraphicBufferProducer> iGBP(nullptr);
@@ -521,7 +521,7 @@ CameraDevice::configureStreamsLocked(const ACaptureSessionOutputContainer* outpu
             return ret;
         }
         outputSet.insert(std::make_pair(
-                anw, OutputConfiguration(iGBP, outConfig.mRotation)));
+                anw, hardware::camera2::params::OutputConfiguration(iGBP, outConfig.mRotation)));
     }
     auto addSet = outputSet;
     std::vector<int> deleteList;
@@ -558,7 +558,7 @@ CameraDevice::configureStreamsLocked(const ACaptureSessionOutputContainer* outpu
             setCameraDeviceErrorLocked(ACAMERA_ERROR_CAMERA_DEVICE);
             return ACAMERA_ERROR_CAMERA_DEVICE;
         }
-        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, mHandler);
         msg->setPointer(kContextKey, mBusySession->mUserSessionCallback.context);
         msg->setObject(kSessionSpKey, mBusySession);
         msg->setPointer(kCallbackFpKey, (void*) mBusySession->mUserSessionCallback.onReady);
@@ -585,11 +585,14 @@ CameraDevice::configureStreamsLocked(const ACaptureSessionOutputContainer* outpu
     }
 
     // add new streams
-    for (auto outputPair : addSet) {
-        int streamId = 0;
-        sp<IGraphicBufferProducer> bufferProducer;
-        remoteRet = mRemote->createStream(outputPair.second.getWidth(), outputPair.second.getHeight(), 0, bufferProducer);
-        if (remoteRet != OK) {
+    for (auto& outputPair : addSet) {
+        int streamId;
+        auto gbp = outputPair.second.getGraphicBufferProducer();
+        OutputConfiguration outputConfiguration(gbp, outputPair.second.getRotation());
+        remoteRet = mRemote->createStream(outputConfiguration);
+        // see https://android.googlesource.com/platform/frameworks/av/+/marshmallow-release/services/camera/libcameraservice/api2/CameraDeviceClient.cpp#490
+        streamId = remoteRet < OK ? -1 : remoteRet;
+        if (streamId < OK) {
             ALOGE("Camera device %s failed to create stream: %d", getId(),
                     remoteRet);
             return ACAMERA_ERROR_UNKNOWN;
@@ -713,7 +716,7 @@ CameraDevice::onCaptureErrorLocked(
         ALOGV("Camera %s Lost output buffer for ANW %p frame %" PRId64,
                 getId(), anw, frameNumber);
 
-        sp<AMessage> msg = new AMessage(kWhatCaptureBufferLost, mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatCaptureBufferLost, mHandler);
         msg->setPointer(kContextKey, cbh.mCallbacks.context);
         msg->setObject(kSessionSpKey, session);
         msg->setPointer(kCallbackFpKey, (void*) onBufferLost);
@@ -732,7 +735,7 @@ CameraDevice::onCaptureErrorLocked(
         failure->wasImageCaptured = (errorCode ==
                 hardware::camera2::ICameraDeviceCallbacks::ERROR_CAMERA_RESULT);
 
-        sp<AMessage> msg = new AMessage(kWhatCaptureFail, mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatCaptureFail, mHandler);
         msg->setPointer(kContextKey, cbh.mCallbacks.context);
         msg->setObject(kSessionSpKey, session);
         msg->setPointer(kCallbackFpKey, (void*) onError);
@@ -1041,7 +1044,7 @@ CameraDevice::checkRepeatingSequenceCompleteLocked(
         CallbackHolder cbh = cbIt->second;
         mSequenceCallbackMap.erase(cbIt);
         // send seq aborted callback
-        sp<AMessage> msg = new AMessage(kWhatCaptureSeqAbort, mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatCaptureSeqAbort, mHandler);
         msg->setPointer(kContextKey, cbh.mCallbacks.context);
         msg->setObject(kSessionSpKey, cbh.mSession);
         msg->setPointer(kCallbackFpKey, (void*) cbh.mCallbacks.onCaptureSequenceAborted);
@@ -1091,7 +1094,7 @@ CameraDevice::checkAndFireSequenceCompleteLocked() {
             CallbackHolder cbh = cbIt->second;
             mSequenceCallbackMap.erase(cbIt);
             // send seq complete callback
-            sp<AMessage> msg = new AMessage(kWhatCaptureSeqEnd, mHandler->id());
+            sp<AMessage> msg = new AMessage(kWhatCaptureSeqEnd, mHandler);
             msg->setPointer(kContextKey, cbh.mCallbacks.context);
             msg->setObject(kSessionSpKey, cbh.mSession);
             msg->setPointer(kCallbackFpKey, (void*) cbh.mCallbacks.onCaptureSequenceCompleted);
@@ -1141,7 +1144,7 @@ CameraDevice::ServiceCallback::onDeviceError(
                 dev->mCurrentSession->closeByDevice();
                 dev->mCurrentSession = nullptr;
             }
-            sp<AMessage> msg = new AMessage(kWhatOnDisconnected, dev->mHandler->id());
+            sp<AMessage> msg = new AMessage(kWhatOnDisconnected, dev->mHandler);
             msg->setPointer(kContextKey, dev->mAppCallbacks.context);
             msg->setPointer(kDeviceKey, (void*) dev->getWrapper());
             msg->setPointer(kCallbackFpKey, (void*) dev->mAppCallbacks.onDisconnected);
@@ -1165,7 +1168,7 @@ CameraDevice::ServiceCallback::onDeviceError(
                     dev->setCameraDeviceErrorLocked(ACAMERA_ERROR_UNKNOWN);
                     break;
             }
-            sp<AMessage> msg = new AMessage(kWhatOnError, dev->mHandler->id());
+            sp<AMessage> msg = new AMessage(kWhatOnError, dev->mHandler);
             msg->setPointer(kContextKey, dev->mAppCallbacks.context);
             msg->setPointer(kDeviceKey, (void*) dev->getWrapper());
             msg->setPointer(kCallbackFpKey, (void*) dev->mAppCallbacks.onError);
@@ -1206,7 +1209,7 @@ CameraDevice::ServiceCallback::onDeviceIdle() {
             dev->setCameraDeviceErrorLocked(ACAMERA_ERROR_CAMERA_DEVICE);
             return;
         }
-        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, dev->mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatSessionStateCb, dev->mHandler);
         msg->setPointer(kContextKey, dev->mBusySession->mUserSessionCallback.context);
         msg->setObject(kSessionSpKey, dev->mBusySession);
         msg->setPointer(kCallbackFpKey, (void*) dev->mBusySession->mUserSessionCallback.onReady);
@@ -1247,7 +1250,7 @@ CameraDevice::ServiceCallback::onCaptureStarted(
             dev->setCameraDeviceErrorLocked(ACAMERA_ERROR_CAMERA_SERVICE);
         }
         sp<CaptureRequest> request = cbh.mRequests[burstId];
-        sp<AMessage> msg = new AMessage(kWhatCaptureStart, dev->mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatCaptureStart, dev->mHandler);
         msg->setPointer(kContextKey, cbh.mCallbacks.context);
         msg->setObject(kSessionSpKey, session);
         msg->setPointer(kCallbackFpKey, (void*) onStart);
@@ -1308,7 +1311,7 @@ CameraDevice::ServiceCallback::onResultReceived(
         sp<ACameraMetadata> result(new ACameraMetadata(
                 metadataCopy.release(), ACameraMetadata::ACM_RESULT));
 
-        sp<AMessage> msg = new AMessage(kWhatCaptureResult, dev->mHandler->id());
+        sp<AMessage> msg = new AMessage(kWhatCaptureResult, dev->mHandler);
         msg->setPointer(kContextKey, cbh.mCallbacks.context);
         msg->setObject(kSessionSpKey, session);
         msg->setPointer(kCallbackFpKey, (void*) onResult);
@@ -1323,10 +1326,9 @@ CameraDevice::ServiceCallback::onResultReceived(
     }
 }
 
-binder::Status
+void
 CameraDevice::ServiceCallback::onPrepared(int) {
     // Prepare not yet implemented in NDK
-    return OK;
 }
 
 binder::Status

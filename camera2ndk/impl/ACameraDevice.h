@@ -73,7 +73,7 @@ class CameraDevice final : public RefBase {
                               int64_t timestamp) override;
         void onResultReceived(const CameraMetadata& metadata,
                               const CaptureResultExtras& resultExtras) override;
-        binder::Status onPrepared(int streamId);
+        void onPrepared(int streamId) override;
         binder::Status onRepeatingRequestError(int64_t lastFrameNumber);
       private:
         const wp<CameraDevice> mDevice;
@@ -150,7 +150,7 @@ class CameraDevice final : public RefBase {
     ACameraDevice* mWrapper;
 
     // stream id -> pair of (ANW* from application, OutputConfiguration used for camera service)
-    std::map<int, std::pair<ANativeWindow*, OutputConfiguration>> mConfiguredOutputs;
+    std::map<int, std::pair<ANativeWindow*, hardware::camera2::params::OutputConfiguration>> mConfiguredOutputs;
 
     // TODO: maybe a bool will suffice for synchronous implementation?
     std::atomic_bool mClosing;

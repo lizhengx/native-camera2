@@ -6,12 +6,12 @@ android {
 
     defaultConfig {
         applicationId 'org.freedesktop.nativecamera2'
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 24
 
         externalNativeBuild {
             ndkBuild {
-                arguments 'NDK_TOOLCHAIN_VERSION=4.9', 'APP_CPPFLAGS=-std=c++11', 'APP_STL=gnustl_static'
+                arguments 'NDK_TOOLCHAIN_VERSION=clang', 'APP_CPPFLAGS=-std=c++11', 'APP_STL=c++_static'
                 abiFilters 'armeabi-v7a'
             }
         }
