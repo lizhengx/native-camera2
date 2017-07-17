@@ -349,6 +349,12 @@ ACameraManager::getOrCreateCameraIdListLocked(ACameraIdList** cameraIdList) {
                 strlcpy(cameraId, buf, cameraIdSize);
                 cameraIds.push(cameraId);
             }
+            else if (cs->supportsCameraApi(i, ICameraService::API_VERSION_1)) {
+                ALOGD("camera[%d] only supports %u", i, ICameraService::API_VERSION_1);
+            }
+            else {
+                ALOGD("camera[%d] does not even support %u", i, ICameraService::API_VERSION_1);
+            }
         }
         mCachedCameraIdList.numCameras = numCameras;
         mCachedCameraIdList.cameraIds = new const char*[numCameras];
