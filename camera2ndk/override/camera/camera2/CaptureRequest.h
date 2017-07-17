@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ANDROID_HARDWARE_PHOTOGRAPHY_CAPTUREREQUEST_H
-#define ANDROID_HARDWARE_PHOTOGRAPHY_CAPTUREREQUEST_H
+#ifndef ANDROID_HARDWARE_PHOTOGRAPHY_CAPTUREREQUEST_H_OV
+#define ANDROID_HARDWARE_PHOTOGRAPHY_CAPTUREREQUEST_H_OV
 
 #include <utils/RefBase.h>
 #include <utils/Vector.h>
@@ -43,14 +43,8 @@ struct CaptureRequest : public Parcelable {
 
 } // namespace camera2
 } // namespace hardware
-
-struct CaptureRequest :
-        public RefBase, public hardware::camera2::CaptureRequest {
-  public:
-    // Same as android::hardware::camera2::CaptureRequest, except that you can
-    // put this in an sp<>
-};
-
 } // namespace android
+
+#include_next <camera/camera2/CaptureRequest.h>
 
 #endif
