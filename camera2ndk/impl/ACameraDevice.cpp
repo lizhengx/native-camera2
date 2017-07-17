@@ -22,7 +22,6 @@
 #include <android/hardware/ICameraService.h>
 #include <camera2/SubmitInfo.h>
 #include <gui/Surface.h>
-#include <camera/camera2/OutputConfiguration.h>
 #include "ACameraDevice.h"
 #include "ACameraMetadata.h"
 #include "ACaptureRequest.h"
@@ -208,9 +207,7 @@ CameraDevice::submitRequestsLocked(
     }
 
     // Form two vectors of capture request, one for internal tracking
-    List<sp<CaptureRequest> > requestList;
-    Vector<sp<CaptureRequest> > requestsV;
-    requestsV.setCapacity(numRequests);
+    List<sp<CaptureRequest> > requestsV;
     for (int i = 0; i < numRequests; i++) {
         sp<CaptureRequest> req;
         ret = allocateCaptureRequest(requests[i], req);
@@ -222,7 +219,6 @@ CameraDevice::submitRequestsLocked(
             ALOGE("Capture request without output target cannot be submitted!");
             return ACAMERA_ERROR_INVALID_PARAMETER;
         }
-        requestList.push_back(req);
         requestsV.push_back(req);
     }
 
@@ -235,8 +231,8 @@ CameraDevice::submitRequestsLocked(
     }
 
     binder::Status remoteRet;
-    hardware::camera2::utils::SubmitInfo info {};
-    remoteRet = mRemote->submitRequestList(requestList, isRepeating, &info.mLastFrameNumber);
+    hardware::camera2::utils::SubmitInfo info;
+    remoteRet = mRemote->submitRequestList(requestsV, isRepeating, &info.mLastFrameNumber);
     int sequenceId = info.mRequestId;
     int64_t lastFrameNumber = info.mLastFrameNumber;
     if (sequenceId < 0) {
@@ -585,7 +581,7 @@ CameraDevice::configureStreamsLocked(const ACaptureSessionOutputContainer* outpu
     }
 
     // add new streams
-    for (auto& outputPair : addSet) {
+    for (const auto& outputPair : addSet) {
         int streamId;
         auto gbp = outputPair.second.getGraphicBufferProducer();
         OutputConfiguration outputConfiguration(gbp, outputPair.second.getRotation());
@@ -698,7 +694,7 @@ CameraDevice::onCaptureErrorLocked(
         setCameraDeviceErrorLocked(ACAMERA_ERROR_CAMERA_SERVICE);
         return;
     }
-    sp<CaptureRequest> request = cbh.mRequests[burstId];
+    sp<CaptureRequest> request = cbh.getRequest(burstId);
 
     // Handle buffer error
     if (errorCode == hardware::camera2::ICameraDeviceCallbacks::ERROR_CAMERA_BUFFER) {
@@ -848,7 +844,8 @@ void CameraDevice::CallbackHandler::onMessageReceived(
                         ALOGE("%s: Cannot find capture request!", __FUNCTION__);
                         return;
                     }
-                    requestSp = static_cast<CaptureRequest*>(obj.get());
+// TODO: how to cast it back?                  requestSp = static_cast<CaptureRequest*>(obj.get());
+                    ALOGW("Cannot use static_cast for %p", obj.get());
                     break;
             }
 
@@ -1024,11 +1021,21 @@ void CameraDevice::CallbackHandler::onMessageReceived(
 
 CameraDevice::CallbackHolder::CallbackHolder(
     sp<ACameraCaptureSession>          session,
-    const Vector<sp<CaptureRequest> >& requests,
+    const List<sp<CaptureRequest> >& requests,
     bool                               isRepeating,
     ACameraCaptureSession_captureCallbacks* cbs) :
     mSession(session), mRequests(requests),
     mIsRepeating(isRepeating), mCallbacks(fillCb(cbs)) {}
+
+sp<CaptureRequest>
+CameraDevice::CallbackHolder::getRequest(size_t idx) const {
+    if (idx >= mRequests.size()) {
+        return sp<CaptureRequest>();
+    }
+    auto it = mRequests.begin();
+    for (size_t i = 0; i < idx; i++) { it++; }
+    return *it;
+}
 
 void
 CameraDevice::checkRepeatingSequenceCompleteLocked(
@@ -1249,7 +1256,7 @@ CameraDevice::ServiceCallback::onCaptureStarted(
                     __FUNCTION__, burstId, cbh.mRequests.size());
             dev->setCameraDeviceErrorLocked(ACAMERA_ERROR_CAMERA_SERVICE);
         }
-        sp<CaptureRequest> request = cbh.mRequests[burstId];
+        sp<CaptureRequest> request = cbh.getRequest(burstId);
         sp<AMessage> msg = new AMessage(kWhatCaptureStart, dev->mHandler);
         msg->setPointer(kContextKey, cbh.mCallbacks.context);
         msg->setObject(kSessionSpKey, session);
@@ -1307,7 +1314,7 @@ CameraDevice::ServiceCallback::onResultReceived(
                     __FUNCTION__, burstId, cbh.mRequests.size());
             dev->setCameraDeviceErrorLocked(ACAMERA_ERROR_CAMERA_SERVICE);
         }
-        sp<CaptureRequest> request = cbh.mRequests[burstId];
+        sp<CaptureRequest> request = cbh.getRequest(burstId);
         sp<ACameraMetadata> result(new ACameraMetadata(
                 metadataCopy.release(), ACameraMetadata::ACM_RESULT));
 

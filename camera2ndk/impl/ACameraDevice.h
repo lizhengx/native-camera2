@@ -222,7 +222,7 @@ class CameraDevice final : public RefBase {
 
     struct CallbackHolder {
         CallbackHolder(sp<ACameraCaptureSession>          session,
-                       const Vector<sp<CaptureRequest> >& requests,
+                       const List<sp<CaptureRequest> >& requests,
                        bool                               isRepeating,
                        ACameraCaptureSession_captureCallbacks* cbs);
 
@@ -233,9 +233,10 @@ class CameraDevice final : public RefBase {
             }
             return { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
         }
+        sp<CaptureRequest> getRequest(size_t idx) const;
 
         sp<ACameraCaptureSession>   mSession;
-        Vector<sp<CaptureRequest> > mRequests;
+        List<sp<CaptureRequest> > mRequests;
         const bool                  mIsRepeating;
         ACameraCaptureSession_captureCallbacks mCallbacks;
     };
