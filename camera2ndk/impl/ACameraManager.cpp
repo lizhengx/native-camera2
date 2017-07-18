@@ -335,6 +335,19 @@ ACameraManager::getOrCreateCameraIdListLocked(ACameraIdList** cameraIdList) {
         for (int i = 0; i < numAllCameras; i++) {
             // TODO: Only suppot HALs that supports API2 directly now
             bool camera2Support = cs->supportsCameraApi(i, ICameraService::API_VERSION_2);
+            struct camera_info cameraInfo;
+            cs->getCameraInfo(i, reinterpret_cast<struct CameraInfo *>(&cameraInfo));
+
+            switch(cameraInfo.device_version) {
+                case (uint32_t)-1:
+                    ALOGE("Invalid camera id %d", i);
+                    break;
+                default:
+                    ALOGE("Camera device %d HAL version: %x", i, cameraInfo.device_version);
+                    camera2Support = true;
+                    break;
+            }
+
             char buf[kMaxCameraIdLen];
             if (camera2Support) {
                 numCameras++;
@@ -348,12 +361,6 @@ ACameraManager::getOrCreateCameraIdListLocked(ACameraIdList** cameraIdList) {
                 }
                 strlcpy(cameraId, buf, cameraIdSize);
                 cameraIds.push(cameraId);
-            }
-            else if (cs->supportsCameraApi(i, ICameraService::API_VERSION_1)) {
-                ALOGD("camera[%d] only supports %u", i, ICameraService::API_VERSION_1);
-            }
-            else {
-                ALOGD("camera[%d] does not even support %u", i, ICameraService::API_VERSION_1);
             }
         }
         mCachedCameraIdList.numCameras = numCameras;
@@ -483,7 +490,7 @@ ACameraManager::openCamera(
     // No way to get package name from native.
     // Send a zero length package name and let camera service figure it out from UID
     binder::Status serviceRet = cs->connectDevice(
-            callbacks, id, String16(""),
+            callbacks, id, String16("org.freedesktop.nativecamera2"),
             hardware::ICameraService::USE_CALLING_UID, /*out*/deviceRemote);
 
     if (serviceRet != OK) {
