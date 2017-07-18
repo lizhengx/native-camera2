@@ -7,7 +7,7 @@ android {
     defaultConfig {
         applicationId 'org.freedesktop.nativecamera2'
         minSdkVersion 23
-        targetSdkVersion 24
+        targetSdkVersion 21
 
         externalNativeBuild {
             ndkBuild {
@@ -21,6 +21,13 @@ android {
         ndkBuild {
              path 'src/main/jni/Android.mk'
         }
+    }
+
+    dependencies {
+        compile "com.android.support:support-v4:24.1.1"
+        compile "com.android.support:support-v13:24.1.1"
+        compile "com.android.support:cardview-v7:24.1.1"
+        compile "com.android.support:appcompat-v7:24.1.1"
     }
 
     packagingOptions {
