@@ -9,7 +9,7 @@ in Android N.
 This fork is a POC that back ports the native camera2 API to Marshmallow and possibly to Lollipop devices.
 
 It runs live camera preview on 6.0.1 Nexus 5 phone, but more experimental data is needed to understand whether
-it is worth anything beyond a little excersise in abuing Android system headers.
+it is worth anything beyond a little excercsise in abusing Android system headers.
 
 BTW, the backdoor was [slammed shut](https://developer.android.com/about/versions/nougat/android-7.0-changes.html#ndk) in Android N, and same techniques are not relevant anymore for modern platforms.
 
@@ -22,3 +22,6 @@ Screenshots
 -----------
 ![screenshot](screenshot.png)
 
+Privacy Policy
+==============
+This app sends nothing, shares nothing, and will never do anything beyond being an experimental playground for Android Camera API.
